@@ -1,0 +1,80 @@
+# Based on the "trust" template v0.1.2
+# https://github.com/japaric/trust/tree/v0.1.2
+
+dist: xenial
+language: rust
+services: docker
+sudo: required
+
+env:
+  global:
+    - CRATE_NAME=rusqly
+
+matrix:
+  include:
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-musl
+
+    # OSX
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+    # Windows
+    - env: TARGET=x86_64-pc-windows-gnu
+
+    # Testing other channels
+    - env: TARGET=x86_64-unknown-linux-musl
+      rust: nightly
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+
+before_install:
+  - set -e
+  - rustup self update
+
+install:
+  - sh ci/install.sh
+  - source ~/.cargo/env || true
+
+script:
+  - bash ci/script.sh
+
+after_script: set +e
+
+before_deploy:
+  - sh ci/before_deploy.sh
+
+deploy:
+  # TODO update `api_key.secure`
+  # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
+  # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789
+  # - Paste the output down here
+  api_key:
+    secure: "EnvxSN5m6+kHhFHAzV5CdYJYW7W6Tcddk+6V9e5zvUTlc+1dvh6K0VKFSjlbnNuzBn4jQ54r7hyeiTVjB03ydAn5xnlXCrQrTc/XIbes0dByB1+qskgHEp2Tl3Oie5Yuds32YCMu7xWf/S+J3RIXYwvMRzqYyRhGPTtzIqjJj32Gef8XiZthzUah9kZBwHwwNnh4KSzmGSTDOSUMIaiUrnsSlQDOnh3qhsyTeceGndyyxhiOrIxmhIn6Ymz5Qkov41AXTVY8bLgYSib9sXsbfmtFt38l3OoGfOLwbgT0+SV+dFQNp/q9e2Yr8yVNlUPnLnxpqF/45l0LzpgkPzSWSp4qipf4HptL8sdWpdnRfcI+qh/Alh8K1vrEsWMAHBqqZyrUz3eEvpy9pr6TaHBIQLOqQmEMCWVpVHHmMfBCFTN27l5/m67+Zbm7ZqiEdgoFnx9R7UtfzAigBPGNHO40ZGvJ4gDlrWLFixira5O0QeKugSZEzs9iBYKj60KA9dT81Mwnu9mzSPxSLhNUN9wUURdy5gmMZk+UryLYhWpw7x2WBqZxUWPR3/3NtWE1iFQgHZZtt0Q1UNlcF6FGy7TSkRwcRioG9jTEfCLFasBcy0viBAjbVFD1EHi1GLIFRzJQj7pmDoyGg0z9z8SaSAwCwoLXKQZfx+ZM9nXMLA18CKQ="
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  on:
+    # TODO Here you can pick which targets will generate binary releases
+    # In this example, there are some targets that are tested using the stable
+    # and nightly channels. This condition makes sure there is only one release
+    # for such targets and that's generated using the stable channel
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  provider: releases
+  skip_cleanup: true
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never
