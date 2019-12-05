@@ -3,9 +3,10 @@ extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 
+mod core;
+
 use dirs::home_dir;
 use rustyline::error::ReadlineError;
-use rustyline::Editor;
 use std::path::PathBuf;
 use std::{fs, io, result};
 use structopt::StructOpt;
@@ -22,15 +23,15 @@ pub enum Error {
     Unknown,
 }
 
-impl From<ReadlineError> for Error {
-    fn from(err: ReadlineError) -> Self {
-        Error::Readline(err)
-    }
-}
-
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::Io(err)
+    }
+}
+
+impl From<ReadlineError> for Error {
+    fn from(err: ReadlineError) -> Self {
+        Error::Readline(err)
     }
 }
 
@@ -62,25 +63,7 @@ pub fn run(opt: &Opt) -> Result<()> {
     // create cache dir if not exists
     fs::create_dir_all(&CACHE_DIR as &str)?;
 
-    let mut rl = Editor::<()>::new();
-    let _ = rl.load_history(&opt.history);
-    loop {
-        let readline = rl.readline("rusqly> ");
-        match readline {
-            Ok(line) => {
-                rl.add_history_entry(line.as_str());
-                if line == ".exit" {
-                    break;
-                } else {
-                    println!("Unrecognized command '{}'.", line);
-                }
-            }
-            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => break,
-            Err(err) => return Err(err.into()),
-        }
-        rl.save_history(&opt.history)?;
-    }
-
+    core::run_repl(opt)?;
     println!("Bye.");
 
     Ok(())
