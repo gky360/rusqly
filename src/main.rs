@@ -10,6 +10,7 @@ fn main() {
     process::exit(match result {
         Ok(()) => 0,
         Err(err) => {
+            eprintln!("{}", err);
             eprintln!("{:?}", err);
             1
         }
