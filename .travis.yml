@@ -74,6 +74,7 @@ branches:
     # release tags
     - /^v\d+\.\d+\.\d+.*$/
     - master
+    - /^part\-[0-9][0-9]$/
 
 notifications:
   email:
