@@ -69,7 +69,11 @@ pub fn run(opt: &Opt) -> Result<()> {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
-                eprintln!("Line: {}", line);
+                if line == ".exit" {
+                    break;
+                } else {
+                    println!("Unrecognized command '{}'.", line);
+                }
             }
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => break,
             Err(err) => return Err(err.into()),
